@@ -1,4 +1,5 @@
 import { AxiosStatic } from 'axios';
+import { InternalError } from '@src/utils/errors/internal-error';
 
 export interface StormGlassPointSource {
   [key: string]: number;
@@ -30,6 +31,22 @@ export interface ForecastPoints {
   windSpeed: number;
 }
 
+export class ClientRequestError extends InternalError {
+  constructor(message: string) {
+    const internalMessage =
+      'Unexpected error when trying to communicate to StormGlass';
+    super(`${internalMessage}: ${message}`);
+  }
+}
+
+export class StormGlassResponseError extends InternalError {
+  constructor(message: string) {
+    const internalMessage =
+      'Unexpected error returned by the StormGlass service';
+    super(`${internalMessage}: ${message}`);
+  }
+}
+
 export class StormGlass {
   readonly stormGlassParams = [
     'swellDirection',
@@ -48,21 +65,33 @@ export class StormGlass {
     lat: number,
     lng: number
   ): Promise<ForecastPoints[]> {
-    const url = 'https://api.stormglass.io/v2/weather/point';
-    const response = await this.request.get<StormGlassForecastResponse>(url, {
-      headers: {
-        Authorization: 'fake-token',
-      },
-      params: {
-        params: this.stormGlassParams.join(','),
-        source: this.stormGlassSource,
-        end: Date.now(),
-        lat,
-        lng,
-      },
-    });
+    try {
+      const url = '/weather/point';
+      const response = await this.request.get<StormGlassForecastResponse>(url, {
+        headers: {
+          Authorization: 'fake-token',
+        },
+        params: {
+          params: this.stormGlassParams.join(','),
+          source: this.stormGlassSource,
+          end: Date.now(),
+          lat,
+          lng,
+        },
+      });
 
-    return this.normalizeResponse(response.data);
+      return this.normalizeResponse(response.data);
+    } catch (err) {
+      if (err.response && err.response.status) {
+        throw new StormGlassResponseError(
+          `Error: ${JSON.stringify(err.response.data)} Code: ${
+            err.response.status
+          }`
+        );
+      }
+
+      throw new ClientRequestError(err.message);
+    }
   }
 
   private normalizeResponse(
