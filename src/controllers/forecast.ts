@@ -1,11 +1,12 @@
-import supertest from 'supertest';
+import { Controller, Get } from '@overnightjs/core';
+import { Response, Request } from 'express';
 
-describe('Beach forecast functional test', () => {
-  it('should return a forecast with just a few times', async () => {
-    const { body, status } = await global.testRequest.get('/forecast');
+@Controller('forecast')
+export class ForecastController {
 
-    expect(status).toBe(200);
-    expect(body).toEqual([
+  @Get('')
+  public getForecastLoggedUser(_: Request, res: Response): void {
+    res.send([
       {
         "time": "2020-04-26T00:00:00+00:00",
         "forecast": [{
@@ -40,5 +41,5 @@ describe('Beach forecast functional test', () => {
         }]
       }
     ]);
-  });
-});
+  }
+}
