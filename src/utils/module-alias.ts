@@ -5,5 +5,5 @@ const files = paths.resolve(__dirname, '../..');
 
 moduleAlias.addAliases({
   '@src': paths.join(files, 'src'),
-  '@test': paths.join(files, 'test')
+  '@test': paths.join(files, 'test'),
 });
